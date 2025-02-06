@@ -64,9 +64,10 @@ def get_similar(request):
         context = {'url': url}
         return render(request, 'main/not_found.html', context)
     try:
-        page = wikipedia.page(title)
+        page = wikipedia.page(title, auto_suggest=False)
         content = page.content
     except Exception as e:
+        print(e)
         return render(request, 'main/error.html')
     if not os.path.exists('model.pickle') or not os.path.exists('data.npz'):
         return render(request, 'main/need_train.html')
