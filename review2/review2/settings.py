@@ -122,3 +122,15 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+
+# Celery settings
+CELERY_BROKER_URL = os.environ.get(
+    "CELERY_BROKER_URL", "amqp://user:mypassword@rabbitmq:5672//"
+)
+CELERY_RESULT_BACKEND = "db+postgresql://user:mypassword@db:5432/higload_project_db"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "UTC"
