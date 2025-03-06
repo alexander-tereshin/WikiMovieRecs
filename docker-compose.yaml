@@ -8,8 +8,8 @@ services:
     restart: always
     ports:
       - "5432:5432"
-    # volumes:
-    #   - postgres_data:/var/lib/postgresql/data/
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data/
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "user", "-d", "higload_project_db"]
       interval: 30s
@@ -45,17 +45,16 @@ services:
       rabbitmq:
         condition: service_healthy
     command: >
-      sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
-    # volumes:
-    #   - ./review2:/review2
-    environment:
-      - CELERY_BROKER_URL=amqp://user:mypassword@rabbitmq:5672//
+      sh -c "python manage.py migrate && python manage.py collectstatic --noinput && \
+      gunicorn review2.wsgi:application --bind 0.0.0.0:8000"
     networks:
       - backend
+    volumes:
+      - ./static:/review2/static
   celery:
     build: ./review2
-    # volumes:
-    #   - ./review2:/review2
+    volumes:
+      - ./review2:/review2
     depends_on:
       db:
         condition: service_healthy
@@ -66,10 +65,27 @@ services:
       - NUM_ARTICLE=10000
     networks:
       - backend
-
-volumes:
-  postgres_data:
+  static:
+      build: ./review2
+      command: sh -c "python manage.py collectstatic --noinput"
+      volumes:
+        - ./static:/review2/static
+      depends_on:
+        - web
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    volumes:
+      - ./nginx_conf:/etc/nginx/conf.d
+      - ./static:/static
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+    networks:
+      - backend
 
 networks:
   backend:
     driver: bridge
+
