@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery
+  namespace: highload-project
+  labels:
+    app: celery
+    tier: worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: celery
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: celery
+    spec:
+      containers:
+      - name: celery-worker
+        image: registry.gitlab.akhcheck.ru/aleksandr.tereshin/highload_project/django_web_service_movie_review:1.0.0
+        command: ["celery", "-A", "review2.celery", "worker", "--loglevel=info"]
+        env:
+        - name: NUM_ARTICLE
+          value: "10000"
+        resources:
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+      imagePullSecrets:
+      - name: registry-token
