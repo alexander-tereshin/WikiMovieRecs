@@ -23,14 +23,17 @@ spec:
     spec:
       containers:
       - name: web
-        image: registry.gitlab.akhcheck.ru/aleksandr.tereshin/highload_project/django_web_service_movie_review:1.0.0
-        command: ["sh", "-c", "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn review2.wsgi:application --bind 0.0.0.0:8000"]
+        image: registry.gitlab.akhcheck.ru/aleksandr.tereshin/highload_project/django_web_service_movie_review:1.0.1
+        command: ["sh", "-c", "python manage.py migrate && gunicorn review2.wsgi:application --bind 0.0.0.0:8000"]
         ports:
         - containerPort: 8000
         resources:
           limits:
             cpu: "1"
             memory: "1024Mi"
+        volumeMounts:
+        - name: static-volume
+          mountPath: /review2/static
       volumes:
       - name: static-volume
         persistentVolumeClaim:

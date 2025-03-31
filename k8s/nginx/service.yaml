@@ -8,10 +8,9 @@ metadata:
     tier: frontend
 spec:
   type: LoadBalancer
-  ports:
-    - name: http
-      port: 80
-      targetPort: 80
-      protocol: TCP
   selector:
     app: nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
