@@ -3,3 +3,4 @@ __pycache__
 .env
 *.sqlite3
 *.pyc
+k8s/base/secrets/

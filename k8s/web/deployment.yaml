@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: highload-project
+  labels:
+    app: web
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: web
+        image: registry.gitlab.akhcheck.ru/aleksandr.tereshin/highload_project/django_web_service_movie_review:1.0.1
+        command: ["sh", "-c", "python manage.py migrate && gunicorn review2.wsgi:application --bind 0.0.0.0:8000"]
+        ports:
+        - containerPort: 8000
+        resources:
+          limits:
+            cpu: "1"
+            memory: "1024Mi"
+        volumeMounts:
+        - name: static-volume
+          mountPath: /review2/static
+      volumes:
+      - name: static-volume
+        persistentVolumeClaim:
+          claimName: static-pvc
+      imagePullSecrets:
+      - name: registry-token

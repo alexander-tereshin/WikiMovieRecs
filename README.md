@@ -39,15 +39,111 @@
 
 3. Сервис будет доступен по тому же адресу: <http://localhost:8000>
 
-## Работа с сервисом
+## Запуск через Docker Compose
 
-### Поиск похожих фильмов
+1. Запустите сервисы:
 
-1. На главной странице введите:
-    - Ссылку на англоязычную статью Википедии о фильме
+    ```bash
+    docker-compose up --build
+    ```
+
+2. Web-сервис будет доступен по адресу: <http://localhost>
+
+3. Nginx будет проксировать запросы к сервису на порт 8000. Если вы хотите обратиться к приложению, используйте один из следующих URL:
+
+    - Основной интерфейс: <http://localhost/app>
+    - Админка: <http://localhost/admin>
+    - Health Check: <http://localhost/health>
+
+### Работа с сервисом
+
+#### Поиск похожих фильмов
+
+1. На главной странице приложения введите:
+
+    - Ссылку на англоязычную статью Википедии о фильме (например, <https://en.wikipedia.org/wiki/Gladiator_(2000_film)>)
     - Количество рекомендаций (1-10)
-2. Пример корректной ссылки:
 
-    <https://en.wikipedia.org/wiki/Gladiator_(2000_film)>
+2. Нажмите "Search", чтобы отправить запрос на получение рекомендаций. После этого будет создана асинхронная задача, которая обработает запрос.
 
-3. Нажмите "Search" для получения рекомендаций
+3. Вы можете отслеживать статус задачи и результат через интерфейс или по следующему API:
+    - **Статус задачи** можно проверить по URL: <http://localhost/task_status/{task_id}>
+    - Если задача будет успешно выполнена, вы получите список похожих фильмов.
+
+4. Если модель не обучена, будет предложено перейти на страницу для тренировки модели.
+
+В конфиге Nginx используется проксирование запросов на сервис, работающий на порту 8000 (состоящем из контейнера `web`).
+
+## Запуск в Kubernetes
+
+### 1. Развертывание приложения
+
+Примените конфигурации:
+
+```bash
+kubectl apply -f k8s/ --recursive
+```
+
+Где структура папки `k8s/` содержит:
+
+```plaintext
+├── celery/                     # Ресурсы Celery worker
+│   └── deployment.yaml         # Deployment для Celery
+├── db/                         # Ресурсы PostgreSQL
+│   ├── deployment.yaml         # Deployment БД
+│   ├── pvc.yaml                # Persistent Volume Claim
+│   └── service.yaml            # Service для БД
+├── nginx/                      # Ресурсы Nginx
+│   ├── configmap.yaml          # Конфигурация Nginx
+│   ├── deployment.yaml         # Deployment Nginx
+│   └── service.yaml            # Service Nginx (NodePort/LoadBalancer)
+├── rabbitmq/                   # Ресурсы RabbitMQ
+│   ├── deployment.yaml         # Deployment RabbitMQ
+│   └── service.yaml            # Service RabbitMQ
+└── web/                        # Ресурсы Django-приложения
+    ├── deployment.yaml         # Deployment веб-приложения
+    ├── pvc.yaml                # Persistent Volume для статики/медиа
+    └── service.yaml            # Service веб-приложения
+```
+
+### 2. Доступ к приложению через Minikube (для локального тестирования)
+
+После развертывания приложение будет доступно через Nginx
+
+```bash
+minikube tunnel
+```
+
+**Проверьте назначенный внешний IP**:
+
+```bash
+kubectl get svc nginx -n highload-project -o wide
+```
+
+Пример вывода:
+
+```bash
+NAME    TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+nginx   LoadBalancer   10.96.45.217   127.0.0.1     80:32456/TCP   2m
+```
+
+Теперь приложение доступно по фиксированному адресу:
+
+- Основной интерфейс: [http://localhost/app](http://localhost/app)
+- Админка Django: [http://localhost/admin](http://localhost/admin)
+- Health Check: [http://localhost/health](http://localhost/health)
+
+### 3. Работа с сервисом
+
+1. На главной странице приложения введите:
+
+    - Ссылку на англоязычную статью Википедии о фильме (например, <https://en.wikipedia.org/wiki/Gladiator_(2000_film)>)
+    - Количество рекомендаций (1-10)
+
+2. Нажмите "Search", чтобы отправить запрос на получение рекомендаций. После этого будет создана асинхронная задача, которая обработает запрос.
+
+3. Вы можете отслеживать статус задачи и результат через интерфейс или по следующему API:
+    - **Статус задачи** можно проверить по URL: <http://localhost/app/task_status/{task_id}>
+    - Если задача будет успешно выполнена, вы получите список похожих фильмов.
+
+4. Если модель не обучена, будет предложено перейти на страницу для тренировки модели.
