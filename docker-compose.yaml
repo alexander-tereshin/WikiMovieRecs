@@ -44,9 +44,7 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    command: >
-      sh -c "python manage.py migrate && python manage.py collectstatic --noinput && \
-      gunicorn review2.wsgi:application --bind 0.0.0.0:8000"
+    command: sh -c "python manage.py migrate && gunicorn review2.wsgi:application --bind 0.0.0.0:8000"
     networks:
       - backend
     volumes:
@@ -60,7 +58,7 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    command: celery -A review2.celery worker --loglevel=info
+    command: celery -A review2.celery worker --loglevel=info --concurrency=3
     environment:
       - NUM_ARTICLE=10000
     networks:
